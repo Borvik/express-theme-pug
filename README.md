@@ -24,6 +24,12 @@ views/
 ```
 When a theme is specified it should use that theme's folder - if the file exists, otherwise it should fall back to the `default` theme. This should hold true for the `res.render()` method, as well as for `extends` and `include` directives within Pug.
 
+## Installation
+
+```
+npm install express-theme-pug
+```
+
 ## Basic Usage
 
 Treat the theme directory (ex. views/default, views/theme\_1, views/theme\_2) as if it was the root view directory when referencing files within the theme (such as the `res.render()` calls or with Pug `include` or `extends` directives).
@@ -32,7 +38,7 @@ Treat the theme directory (ex. views/default, views/theme\_1, views/theme\_2) as
 
 ```javascript
 // index.js or app.js - whatever loads your application
-app.use(require(''));
+app.use(require('express-theme-pug'));
 
 // you can set your global theme
 app.set('theme', 'theme_1');
