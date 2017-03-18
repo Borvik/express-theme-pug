@@ -1,0 +1,40 @@
+{
+  "name": "express-theme-pug",
+  "version": "1.0.0",
+  "description": "Enables theming for Express and Pug.",
+  "main": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Borvik/express-theme-pug.git"
+  },
+  "engines": {
+    "node": ">=4.8.0"
+  },
+  "keywords": [
+    "theme",
+    "theming",
+    "express",
+    "pug",
+    "node",
+    "nodejs"
+  ],
+  "author": "Chris Kolkman",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Borvik/express-theme-pug/issues"
+  },
+  "homepage": "https://github.com/Borvik/express-theme-pug#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "express": "^4.15.2",
+    "jshint": "^2.9.4",
+    "mocha": "^3.2.0",
+    "pug": "^2.0.0-beta11"
+  }
+}
