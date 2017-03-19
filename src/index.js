@@ -87,15 +87,11 @@ class PugThemer {
       }
     }
 
-    let ext = res.app.get('view engine');
-    ext = ext[0] !== '.' ? '.' + ext : ext;
-
     for (let token of tokens) {
       if (token.type === 'path') {
         for (const view of views) {
           let originalTarget = path.join(path.dirname(options.filename), token.val);
-          if (!PugThemer.endsWith(originalTarget, ext))
-            originalTarget += ext;
+          originalTarget = PugThemer.appendExt(res, originalTarget);
           
           let relativeToCurrentView = path.relative(currentTheme.path, originalTarget);
           
@@ -153,11 +149,7 @@ class PugThemer {
    */
   static getThemePrefix(res, viewFile) {
     let views = PugThemer.getThemeViews(res);
-
-    let ext = res.app.get('view engine');
-    ext = ext[0] !== '.' ? '.' + ext : ext;
-    if (!PugThemer.endsWith(viewFile, ext))
-      viewFile += ext;
+    viewFile = PugThemer.appendExt(res, viewFile);
 
     let viewFound = false;
     for(const view of views) {
@@ -170,8 +162,14 @@ class PugThemer {
     return viewFound ? viewFound : '';
   }
 
-  static endsWith(str, suffix) {
-    return (str.indexOf(suffix, str.length - suffix.length) !== -1);
+  static appendExt(res, file) {
+    let fileExt = path.extname(file);
+    if (fileExt === '') {
+      let ext = res.app.get('view engine');
+      ext = ext[0] !== '.' ? '.' + ext : ext;
+      return file + ext;
+    }
+    return file;
   }
 }
 

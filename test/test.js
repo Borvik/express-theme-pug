@@ -292,7 +292,7 @@ describe('server', function() {
     describe('Theme: (multiple)', function() {
       it('Multi-include test (B test -> a test, a, default, default-test-sub)', function(done) {
         getHttpData(baseurl + 'test/include-test?app=a&theme=b', function(data) {
-          assert.equal(data, 'b-include-test-BA testADEFAULTsub-default-');
+          assert.equal(data, 'b-include-test-BA testADEFAULTsub-default-PLAIN');
           done();
         });
       });
