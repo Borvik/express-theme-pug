@@ -109,7 +109,7 @@ describe('server', function() {
       88   88  88 888888 88 YY 88 888888     dP""""Yb 
     */
     describe('Theme: a', function() {
-      it('/root -> "ROOT"', function(done) {
+      it('/root -> View not found', function(done) {
         getHttpData(baseurl + 'root?app=a', function(data, status) {
           assert.equal(status, 500, 'Should return a 500 error');
           assert.equal(data, viewNotFoundError('root'), 'Wrong error message');
@@ -140,21 +140,21 @@ describe('server', function() {
       });
 
       it('/test/default -> "DEFAULT test"', function(done) {
-        getHttpData(baseurl + 'test/default', function(data) {
+        getHttpData(baseurl + 'test/default?app=a', function(data) {
           assert.equal(data, 'DEFAULT test');
           done();
         });
       });
 
       it('/test/a -> "A test"', function(done) {
-        getHttpData(baseurl + 'test/a', function(data) {
+        getHttpData(baseurl + 'test/a?app=a', function(data) {
           assert.equal(data, 'A test');
           done();
         });
       });
 
       it('/test/b -> View not found', function(done) {
-        getHttpData(baseurl + 'test/b', function(data, status) {
+        getHttpData(baseurl + 'test/b?app=a', function(data, status) {
           assert.equal(status, 500, 'Should return a 500 error');
           assert.equal(data, viewNotFoundError('test/b'), 'Wrong error message');
           done();
@@ -169,7 +169,7 @@ describe('server', function() {
       88   88  88 888888 88 YY 88 888888     88oodP 
     */
     describe('Theme: b', function() {
-      it('/root -> "ROOT"', function(done) {
+      it('/root -> View not found', function(done) {
         getHttpData(baseurl + 'root?app=b', function(data, status) {
           assert.equal(status, 500, 'Should return a 500 error');
           assert.equal(data, viewNotFoundError('root'), 'Wrong error message');
@@ -214,14 +214,14 @@ describe('server', function() {
       });
 
       it('/test/default -> "DEFAULT test"', function(done) {
-        getHttpData(baseurl + 'test/default', function(data) {
+        getHttpData(baseurl + 'test/default?app=b', function(data) {
           assert.equal(data, 'DEFAULT test');
           done();
         });
       });
 
       it('/test/a -> View not found', function(done) {
-        getHttpData(baseurl + 'test/a', function(data, status) {
+        getHttpData(baseurl + 'test/a?app=b', function(data, status) {
           assert.equal(status, 500, 'Should return a 500 error');
           assert.equal(data, viewNotFoundError('test/a'), 'Wrong error message');
           done();
