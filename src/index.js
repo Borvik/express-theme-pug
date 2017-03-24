@@ -49,21 +49,54 @@ class PugThemer {
         return this;
       }
       return this._theme || req.app.locals.theme || req.app.get('theme') || 'default';
-    };
+    }.bind(res);
+
+    let vw = req.app.get('view');
+
+    //console.log('Req: ', typeof vw, vw.prototype.render);
+    if (!PugThemer._viewLookup) {
+      PugThemer._viewLookup = vw.prototype.lookup;
+      vw.prototype.lookup = function(name) {
+        return name;
+      };
+    }
+    if (!PugThemer._viewRender) {
+      PugThemer._viewRender = vw.prototype.render;
+      vw.prototype.render = function(options, callback) {
+        let p = options['express-theme-pug.realpath'];
+        let checkFile = path.join(path.dirname(p), PugThemer.appendExt(null, path.basename(p), this.ext));
+        let realFile = PugThemer._viewLookup.call(this, checkFile);
+        delete options['express-theme-pug.realpath'];
+        this.engine(realFile, options, callback);
+      };
+    }
 
     /**
      * Replace the default render function so it is theme aware.
      */
     let _render = res.render;
     res.render = function(view, renderOptions, fn) {
-      let themePrefix = PugThemer.getThemePrefix(res, view);
+      let options = renderOptions;
+      let callback = fn;
+
+      if (typeof renderOptions === 'function') {
+        callback = renderOptions;
+        options = {};
+      }
+      if (typeof options === 'undefined') {
+        options = {};
+      }
+
+      let themePrefix = PugThemer.getThemePrefix(this, view);
       if (themePrefix === '') {
         let dirs = Array.isArray(PugThemer.baseViews) && PugThemer.baseViews.length > 1 ?
             'directories "' + PugThemer.baseViews.slice(0, -1).join('", "') + '" or "' + PugThemer.baseViews[PugThemer.baseViews.length - 1] + '"' :
             'directory "' + PugThemer.baseViews + '"';
         throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
       }
-      _render.call(this, path.join(themePrefix, view), renderOptions, fn);
+
+      options['express-theme-pug.realpath'] = path.join(themePrefix, view);
+      return _render.call(this, path.join(this.theme(), view), options, callback);
     };
   }
 
@@ -162,11 +195,13 @@ class PugThemer {
     return viewFound ? viewFound : '';
   }
 
-  static appendExt(res, file) {
+  static appendExt(res, file, ext) {
     let fileExt = path.extname(file);
     if (fileExt === '') {
-      let ext = res.app.get('view engine');
-      ext = ext[0] !== '.' ? '.' + ext : ext;
+      if (!ext) {
+        ext = res.app.get('view engine');
+        ext = ext[0] !== '.' ? '.' + ext : ext;
+      }
       return file + ext;
     }
     return file;
