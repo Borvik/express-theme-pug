@@ -43,17 +43,18 @@ class PugThemer {
      * app.get('theme') - app global (two different ways to set, one needs priority)
      * finally use the "default" theme
      */
-    res.theme = function(theme) {
-      if (arguments.length) {
-        this._theme = theme;
-        return this;
-      }
-      return this._theme || req.app.locals.theme || req.app.get('theme') || 'default';
-    }.bind(res);
+    if (!req.app.response.theme) {
+      req.app.response.theme = function(theme) {
+        if (arguments.length) {
+          this._theme = theme;
+          return this;
+        }
+        return this._theme || req.app.locals.theme || req.app.get('theme') || 'default';
+      };
+    }
 
     let vw = req.app.get('view');
 
-    //console.log('Req: ', typeof vw, vw.prototype.render);
     if (!PugThemer._viewLookup) {
       PugThemer._viewLookup = vw.prototype.lookup;
       vw.prototype.lookup = function(name) {
@@ -74,30 +75,32 @@ class PugThemer {
     /**
      * Replace the default render function so it is theme aware.
      */
-    let _render = res.render;
-    res.render = function(view, renderOptions, fn) {
-      let options = renderOptions;
-      let callback = fn;
+    if (!PugThemer._responseRender) {
+      PugThemer._responseRender = req.app.response.render;
+      req.app.response.render = function(view, renderOptions, fn) {
+        let options = renderOptions;
+        let callback = fn;
 
-      if (typeof renderOptions === 'function') {
-        callback = renderOptions;
-        options = {};
-      }
-      if (typeof options === 'undefined') {
-        options = {};
-      }
+        if (typeof renderOptions === 'function') {
+          callback = renderOptions;
+          options = {};
+        }
+        if (typeof options === 'undefined') {
+          options = {};
+        }
 
-      let themePrefix = PugThemer.getThemePrefix(this, view);
-      if (themePrefix === '') {
-        let dirs = Array.isArray(PugThemer.baseViews) && PugThemer.baseViews.length > 1 ?
-            'directories "' + PugThemer.baseViews.slice(0, -1).join('", "') + '" or "' + PugThemer.baseViews[PugThemer.baseViews.length - 1] + '"' :
-            'directory "' + PugThemer.baseViews + '"';
-        throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
-      }
+        let themePrefix = PugThemer.getThemePrefix(this, view);
+        if (themePrefix === '') {
+          let dirs = Array.isArray(PugThemer.baseViews) && PugThemer.baseViews.length > 1 ?
+              'directories "' + PugThemer.baseViews.slice(0, -1).join('", "') + '" or "' + PugThemer.baseViews[PugThemer.baseViews.length - 1] + '"' :
+              'directory "' + PugThemer.baseViews + '"';
+          throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
+        }
 
-      options['express-theme-pug.realpath'] = path.join(themePrefix, view);
-      return _render.call(this, path.join(this.theme(), view), options, callback);
-    };
+        options['express-theme-pug.realpath'] = path.join(themePrefix, view);
+        return PugThemer._responseRender.call(this, path.join(this.theme(), view), options, callback);
+      };
+    }
   }
 
   /**
