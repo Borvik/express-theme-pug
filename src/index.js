@@ -9,6 +9,8 @@ class PugThemer {
    * Initializes an new instance of PugThemer and returns the middleware function.
    */
   static init() {
+    PugThemer.theme_cache = {};
+
     let themer = new PugThemer();
     return function(req, res, next) {
       themer.onTheme(req, res);
@@ -65,6 +67,8 @@ class PugThemer {
       PugThemer._viewRender = vw.prototype.render;
       vw.prototype.render = function(options, callback) {
         let p = options['express-theme-pug.realpath'];
+        //console.log(' Render (default):', this.path);
+        //console.log(' Render (actual): ', p);
         let checkFile = path.join(path.dirname(p), PugThemer.appendExt(null, path.basename(p), this.ext));
         let realFile = PugThemer._viewLookup.call(this, checkFile);
         delete options['express-theme-pug.realpath'];
@@ -89,16 +93,35 @@ class PugThemer {
           options = {};
         }
 
-        let themePrefix = PugThemer.getThemePrefix(this, view);
-        if (themePrefix === '') {
-          let dirs = Array.isArray(PugThemer.baseViews) && PugThemer.baseViews.length > 1 ?
-              'directories "' + PugThemer.baseViews.slice(0, -1).join('", "') + '" or "' + PugThemer.baseViews[PugThemer.baseViews.length - 1] + '"' :
-              'directory "' + PugThemer.baseViews + '"';
-          throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
+        let cache = this.app.enabled('view cache'),
+            themeKey = path.join(PugThemer.getThemeKey(this), view),
+            cachedObject = null;
+        
+        if (cache) {
+          cachedObject = PugThemer.theme_cache[themeKey];
         }
+        
+        if (!cachedObject) {
+          console.log('Building cache['+themeKey+']: ', cache ? 'true' : 'false');
+          let themePrefix = PugThemer.getThemePrefix(this, view);
+          if (themePrefix === '') {
+            let dirs = Array.isArray(PugThemer.baseViews) && PugThemer.baseViews.length > 1 ?
+                'directories "' + PugThemer.baseViews.slice(0, -1).join('", "') + '" or "' + PugThemer.baseViews[PugThemer.baseViews.length - 1] + '"' :
+                'directory "' + PugThemer.baseViews + '"';
+            throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
+          }
 
-        options['express-theme-pug.realpath'] = path.join(themePrefix, view);
-        return PugThemer._responseRender.call(this, path.join(this.theme(), view), options, callback);
+          cachedObject = {
+            realpath: path.join(themePrefix, view),
+            cachepath: themeKey
+          };
+          if (cache) {
+            PugThemer.theme_cache[themeKey] = cachedObject;
+          }
+        }
+        console.log(' Using: ', cachedObject);
+        options['express-theme-pug.realpath'] = cachedObject.realpath; // path.join(themePrefix, view);
+        return PugThemer._responseRender.call(this, cachedObject.cachepath, options, callback); //path.join(this.theme(), view)
       };
     }
   }
@@ -112,7 +135,7 @@ class PugThemer {
    */
   static postPugLexer(res, tokens, options) {
     let views = PugThemer.getThemeViews(res);
-
+    //console.log('Pug: ', views);
     let currentTheme = null;
     for (const view of views) {
       let relative = path.relative(view.path, options.filename);
@@ -125,10 +148,10 @@ class PugThemer {
 
     for (let token of tokens) {
       if (token.type === 'path') {
+        let originalTarget = path.join(path.dirname(options.filename), token.val);
+        originalTarget = PugThemer.appendExt(res, originalTarget);
+
         for (const view of views) {
-          let originalTarget = path.join(path.dirname(options.filename), token.val);
-          originalTarget = PugThemer.appendExt(res, originalTarget);
-          
           let relativeToCurrentView = path.relative(currentTheme.path, originalTarget);
           
           let viewPath = path.join(view.path, relativeToCurrentView);
@@ -141,6 +164,18 @@ class PugThemer {
         } // for:views
       } // if:token.type
     } // for:token
+  }
+
+  static getThemes(res) {
+    let reqTheme = res.theme();
+    let defaultTheme = res.app.locals.theme || res.app.get('theme') || 'default';
+    if (reqTheme === defaultTheme && defaultTheme !== 'default')
+      defaultTheme = 'default';
+    return [reqTheme, defaultTheme, 'default'].filter(function(x,i,a){ return i === a.indexOf(x); });
+  }
+
+  static getThemeKey(res) {
+    return PugThemer.getThemes(res).join('-');
   }
 
   /**
@@ -156,12 +191,8 @@ class PugThemer {
 
     if (!PugThemer.views) PugThemer.views = {};
 
-    let reqTheme = res.theme();
-    let defaultTheme = res.app.locals.theme || res.app.get('theme') || 'default';
-    if (reqTheme === defaultTheme && defaultTheme !== 'default')
-      defaultTheme = 'default';
-    let themeKey = reqTheme+'.'+defaultTheme;
-    let themes = [reqTheme, defaultTheme, 'default'].filter(function(x,i,a){ return i === a.indexOf(x); });
+    let themes = PugThemer.getThemes(res);
+    let themeKey = themes.join('.');
 
     if (!PugThemer.views[themeKey]) {
       let views = [];
