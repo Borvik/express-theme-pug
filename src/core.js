@@ -92,15 +92,28 @@ class ThemeCore {
    * @param {String} viewFile The view file being accessed.
    */
   get_real_path(res, view) {
+    let fileExt = path.extname(view);
+
     let views = this.get_theme_defs(res);
     let viewFile = this.append_ext(res, view);
+    let indexViewFile = (fileExt === '') ? this.append_ext(res, view + '/index') : false;
 
-    let viewFound = false;
+    let viewFound = false, indexViewFound = false;
     for(const viewDef of views) {
       let viewPath = path.join(viewDef.path, viewFile);
       if (fs.existsSync(viewPath)) {
         viewFound = viewDef.theme;
         break;
+      }
+
+      // check for index file
+      if (indexViewFile) {
+        viewPath = path.join(viewDef.path, indexViewFile);
+        if (fs.existsSync(viewPath)) {
+          indexViewFound = true;
+          viewFound = viewDef.theme;
+          break;
+        }
       }
     }
 
@@ -110,7 +123,7 @@ class ThemeCore {
           'directory "' + this.baseViews + '"';
       throw new Error('Failed to lookup view "' + view + '" in views ' + dirs);
     }
-    return path.join(viewFound, view);
+    return indexViewFound ? path.join(viewFound, view + '/index') : path.join(viewFound, view);
   }
 
   /**

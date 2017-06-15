@@ -160,6 +160,13 @@ describe('server', function() {
           done();
         });
       });
+
+      it('/test -> Pug Extension/subdir index test', function(done) {
+        getHttpData(baseurl + 'test?theme=a', function(data) {
+          assert.equal(data, 'a-test-index/default-test-sub-index');
+          done();
+        });
+      });
     });
 
     /*

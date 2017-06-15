@@ -129,9 +129,12 @@ class PugTheme {
 
     for (let token of tokens) {
       if (token.type === 'path') {
-        let originalTarget = path.join(path.dirname(options.filename), token.val);
-        originalTarget = this.core.append_ext(res, originalTarget);
+        let fileExt = path.extname(token.val);
 
+        let originalTarget = path.join(path.dirname(options.filename), token.val);
+        let indexTarget = (fileExt === '') ? this.core.append_ext(res, path.join(path.dirname(options.filename), token.val + '/index')) : false;
+
+        originalTarget = this.core.append_ext(res, originalTarget);
         for (const view of views) {
           let relativeToCurrentView = path.relative(currentTheme.path, originalTarget);
           
@@ -142,6 +145,17 @@ class PugTheme {
             token.val = path.relative(path.dirname(options.filename), filePath);
             break;
           }
+
+          if (indexTarget) {
+            relativeToCurrentView = path.relative(currentTheme.path, indexTarget);
+            viewPath = path.join(view.path, relativeToCurrentView);
+            filePath = path.resolve(viewPath);
+
+            if (fs.existsSync(filePath)) {
+              token.val = path.relative(path.dirname(options.filename), filePath);
+              break;
+            }
+          } // if:indexTarget
         } // for:views
       } // if:token.type
     } // for:token
