@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.5] 2017-06-15
+- Fixed an issue with default file in a directory match
+
 ## [1.0.4] 2017-03-25
 - Fixed an issue with caching
 - Updated function overrides to only affect the prototypes
