@@ -17,12 +17,18 @@ class PugTheme {
      * the paths get used.
      */
     let self = this;
-    res.locals.plugins = [{
+    if (typeof res.locals.plugins !== 'undefined' && !Array.isArray(res.locals.plugins)) {
+      throw new Error('res.locals.plugins is already in use - perhaps by a different node module');
+    }
+    if (typeof res.locals.plugins === 'undefined') {
+      res.locals.plugins = [];
+    }
+    res.locals.plugins.push({
       postLex: function(value, options) {
         self.postPugLexer(res, value, options);
         return value;
       }
-    }];
+    });
 
     let vw = res.app.get('view');
     if (!vw.prototype.pug_engine) {
